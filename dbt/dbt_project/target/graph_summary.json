@@ -1,0 +1,1 @@
+{"_invocation_id": "570df48b-7c17-4142-8baf-667eafbfcd1a", "linked": {"0": {"name": "source.dbt_project.gd_table.Simple_sheets", "type": "source", "succ": [1]}, "1": {"name": "model.dbt_project.ec2_trusted", "type": "model", "succ": [2]}, "2": {"name": "test.dbt_project.not_null_ec2_trusted_Componente.d022a8df3e", "type": "test"}}}

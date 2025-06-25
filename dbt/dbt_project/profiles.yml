@@ -1,0 +1,12 @@
+default:        # passa a chamar-se "default" para invovar no prifile
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: postgres
+      user: admin
+      password: admin
+      port: 5432
+      dbname: warehouse
+      schema: public
+      threads: 1

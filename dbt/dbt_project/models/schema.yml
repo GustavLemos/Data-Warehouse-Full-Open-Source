@@ -1,0 +1,53 @@
+version: 2
+
+sources:
+  - name: gd_table
+    database: warehouse
+    schema: public
+    tables:
+      - name: Simple_sheets
+
+models:
+  - name: ec2_trusted
+    description: "Tabela filtrada contendo apenas registros relacionados a EC2"
+    columns:
+      - name: Componente
+        description: "Nome do componente ou recurso, ex: EC2, EBS, etc."
+        tests:
+          - not_null
+
+      - name: Qtd_Unidade
+        description: "Quantidade ou unidade associada ao recurso"
+
+      - name: Datas_Previstas
+        description: "Período de uso ou cobrança previsto"
+
+      - name: Custo_Maximo__USD_
+        description: "Valor máximo estimado em dólares americanos"
+
+      - name: Custo_Minimo__USD_
+        description: "Valor mínimo estimado em dólares americanos"
+
+      - name: Objetivo_na_Arquitetura
+        description: "Objetivo do recurso dentro da arquitetura da solução"
+
+      - name: Custo_Total_Estimado__BRL_
+        description: "Custo total estimado em reais (BRL)"
+
+      - name: Custo_Total_Estimado__USD_
+        description: "Custo total estimado em dólares (USD)"
+
+      - name: Descricao_Tecnica_da_Funcao
+        description: "Descrição técnica do papel ou função do recurso"
+
+      - name: _airbyte_raw_id
+        description: "ID bruto gerado pelo Airbyte"
+
+      - name: _airbyte_extracted_at
+        description: "Timestamp de extração do dado pelo Airbyte"
+
+      - name: _airbyte_generation_id
+        description: "ID de geração do lote de dados"
+
+      - name: _airbyte_meta
+        description: "Metadados associados ao Airbyte"
