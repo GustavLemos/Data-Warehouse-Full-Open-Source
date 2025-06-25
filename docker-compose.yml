@@ -1,0 +1,124 @@
+version: "3.9"
+
+networks:
+  data-net:
+
+volumes:
+  pgdata:
+  pgadmin_data:
+  airflow_logs:
+
+
+services:
+
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: warehouse
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - data-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - data-net
+
+  airflow-init:
+    image: apache/airflow:2.8.1
+    container_name: airflow-init
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/warehouse
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    entrypoint: >
+      /bin/bash -c "
+        airflow db init &&
+        airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
+        echo 'Airflow DB initialized and user created!'
+      "
+    networks:
+      - data-net
+
+
+
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - airflow-init
+    environment:
+      AIRFLOW_UID: 50000
+      AIRFLOW_GID: 50000
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/warehouse
+      AIRFLOW__CORE__FERNET_KEY: 'XNi5h9VG3d28dMRdkQKSz3tuYVpFjpJcZecYI6gzPqk='
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/dags/files:/opt/airflow/dags/files
+      - airflow_logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    command: webserver
+    networks:
+      - data-net
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - airflow-init
+    environment:
+      AIRFLOW_UID: 50000
+      AIRFLOW_GID: 50000
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres:5432/warehouse
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/dags/files:/opt/airflow/dags/files
+      - airflow_logs:/opt/airflow/logs
+    command: scheduler
+    networks:
+      - data-net
+
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.7.5
+    container_name: dbt
+    volumes:
+      - ./dbt/dbt_project:/usr/app
+    working_dir: /usr/app
+    environment:
+      DBT_PROFILES_DIR: /usr/app
+    depends_on:
+      - postgres
+    entrypoint: ["tail", "-f", "/dev/null"]
+    networks:
+      - data-net
+
+
